@@ -1,0 +1,40 @@
+body {
+    background: rgba(216, 216, 216, 1);
+    margin: 0;
+    padding: 0;
+    z-index: -10000;
+}
+
+.navbar-brand {
+    color: #fff !important;
+    padding: 0 10px;
+    font-weight: bold;
+}
+
+.navbar-brand:hover {
+    color: aqua !important;
+}
+
+.nav-link:hover {
+    color: rgba(255, 189, 46, 1) !important;
+    font-weight: bold;
+}
+
+.display-4, .text-shadow {
+    text-shadow: 3px 3px 3px rgba(34, 34, 34, 0.12);
+}
+
+.jumbotron {
+    box-shadow: 0 3px 6px rgba(34, 34, 34, 1);
+    height: 240px;
+}
+
+.jumbotron img {
+    border: 6px solid rgba(244, 244, 244, 0.5);
+    height: 128px;
+    width: 128px;
+}
+
+.imagen {
+    box-shadow: 0 3px 3px rgba(34, 34, 34, 1);
+}
