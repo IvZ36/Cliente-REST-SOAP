@@ -2,8 +2,6 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.Version;
-import servicios.ServicioSOAP;
-import servicios.ServicioSOAPService;
 import spark.Request;
 
 import javax.servlet.MultipartConfigElement;
@@ -20,7 +18,7 @@ import java.util.*;
 import static spark.Spark.*;
 import static spark.debug.DebugScreen.*;
 
-public class Enrutamiento {
+public class Routes {
     private static final String FLASH_MESSAGE_KEY = "flash_message";
 
     public static void crearRutas() {
@@ -64,99 +62,6 @@ public class Enrutamiento {
                 return null;
             });
 
-            get("/urls-rest/:usuario", (req, res) -> {
-                String usuario = req.params("user");
-                Template template = configuration.getTemplate("spark.template.freemarker/crear-rest.ftl");
-                StringWriter writer = new StringWriter();
-                Map<String, Object> atributos = new HashMap<>();
-
-                ClienteRest rest = new ClienteRest();
-
-                String salida = rest.listarurls(usuario);
-
-                if (!salida.replaceAll("\"", "").equals("")) {
-                    salida = salida.replace('[', ' ');
-                    salida = salida.replace(']', ' ');
-                    String[] salidasAux = salida.split("\"");
-
-                    List<String> listaSalidasAux = new ArrayList<>();
-
-                    for (int i = 0; i < salidasAux.length; i++) {
-                        if (!salidasAux[i].equals(" ") && !salidasAux[i].equals(",")) {
-                            listaSalidasAux.add(salidasAux[i]);
-                        }
-                    }
-
-                    List<String []> salidas = new ArrayList<>();
-
-                    for (String x : listaSalidasAux) {
-                        salidas.add(x.split(","));
-                    }
-
-                    atributos.put("salidas", salidas);
-                    template.process(atributos, writer);
-
-                    return writer;
-                } else {
-                    setFlashMessage(req, "No se pudo consultar posts. El usuario no existe.");
-                    res.redirect("/");
-                    return null;
-                }
-            });
-
-            get("/crear-post", (req, res) -> {
-                StringWriter writer = new StringWriter();
-                Map<String, Object> atributos = new HashMap<>();
-                Template template = configuration.getTemplate("spark.template.freemarker/crear-rest.ftl");
-
-                template.process(atributos, writer);
-
-                return writer;
-            });
-
-            post("/crear-post", (req, res) -> {
-                StringWriter writer = new StringWriter();
-                Map<String, Object> atributos = new HashMap<>();
-                Template template = configuration.getTemplate("spark.template.freemarker/crear-rest.ftl");
-
-                java.sql.Date tiempoAhora = new Date(System.currentTimeMillis());
-
-                Path tempFile = Files.createTempFile(uploadDir.toPath(), "", "");
-
-                req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
-
-                String texto = req.queryParams("texto");
-                String usuario = req.queryParams("usuario");
-
-                try (InputStream input = req.raw().getPart("imagen").getInputStream()) {
-                    Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING);
-                }
-
-                MultivaluedMap<String, String> formulario = new MultivaluedMapImpl();
-                formulario.add("usuario", usuario);
-                formulario.add("texto", texto);
-                formulario.add("imagen", tempFile.getFileName().toString());
-
-                ClienteRest rest = new ClienteRest();
-                String salida = rest.crearurl(formulario);
-
-                if(!salida.replaceAll("\"", "").equals("")) {
-                    salida = salida.replaceAll("\"", "");
-                    String[] salidas = salida.split(",");
-
-                    atributos.put("texto", salidas[0]);
-                    atributos.put("imagen", salidas[1]);
-                    atributos.put("usuario", salidas[2]);
-                    atributos.put("fecha", salidas[3]);
-                    template.process(atributos, writer);
-
-                    return writer;
-                } else {
-                    setFlashMessage(req, "No se pudo crear el post. El usuario no existe.");
-                    res.redirect("/");
-                    return null;
-                }
-            });
         });
 
         path("/soap", () -> {
@@ -176,86 +81,6 @@ public class Enrutamiento {
                 return null;
             });
 
-            get("/posts/:usuario", (req, res) -> {
-                String usuario = req.params("usuario");
-                Template template = configuration.getTemplate("spark.template.freemarker/crear-soap.ftl");
-                StringWriter writer = new StringWriter();
-                Map<String, Object> atributos = new HashMap<>();
-
-                ServicioSOAPService soap = new ServicioSOAPService();
-                ServicioSOAP port = soap.getServicioSOAPPort();
-
-                List<String> salida = port.getListadoPostPorUsuario(usuario);
-
-                if (!salida.isEmpty()) {
-                    List<String []> salidas = new ArrayList<>();
-
-                    for (String x : salida) {
-                        salidas.add(x.split(","));
-                    }
-
-                    atributos.put("salidas", salidas);
-                    template.process(atributos, writer);
-
-                    return writer;
-                } else {
-                    setFlashMessage(req, "No se pudo consultar posts. El usuario no existe.");
-                    res.redirect("/");
-                    return null;
-                }
-            });
-
-            get("/crear-post", (req, res) -> {
-                StringWriter writer = new StringWriter();
-                Map<String, Object> atributos = new HashMap<>();
-                Template template = configuration.getTemplate("spark.template.freemarker/crear-soap.ftl");
-
-                template.process(atributos, writer);
-
-                return writer;
-            });
-
-
-            post("/crear-post", (req, res) -> {
-                StringWriter writer = new StringWriter();
-                Map<String, Object> atributos = new HashMap<>();
-                Template template = configuration.getTemplate("spark.template.freemarker/post-creado-soap.ftl");
-
-                java.sql.Date tiempoAhora = new Date(System.currentTimeMillis());
-
-                Path tempFile = Files.createTempFile(uploadDir.toPath(), "", "");
-
-                req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
-
-                String texto = req.queryParams("texto");
-                String usuario = req.queryParams("usuario");
-
-                try (InputStream input = req.raw().getPart("imagen").getInputStream()) {
-                    Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING);
-                }
-
-                ServicioSOAPService soap = new ServicioSOAPService();
-                ServicioSOAP port = soap.getServicioSOAPPort();
-                String salida = port.crearPost(texto, usuario, tempFile.getFileName().toString());
-
-                if (!salida.isEmpty()) {
-                    salida = salida.replaceAll("\"", "");
-
-                    String[] salidas = salida.split(",");
-
-                    atributos.put("texto", salidas[0]);
-                    atributos.put("imagen", salidas[1]);
-                    atributos.put("usuario", salidas[2]);
-                    atributos.put("fecha", salidas[3]);
-                    template.process(atributos, writer);
-
-                    return writer;
-                } else {
-                    setFlashMessage(req, "No se pudo crear el post. El usuario no existe.");
-                    res.redirect("/");
-                    return null;
-                }
-            });
         });
     }
 
